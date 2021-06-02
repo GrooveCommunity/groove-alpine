@@ -3,7 +3,9 @@ name: Build
 on:
   push:
     branches:
-    - '!main'
+    - 'feature/*'
+    - 'bug/*'
+    - 'hotfix/*'
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
