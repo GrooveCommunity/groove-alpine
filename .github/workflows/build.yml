@@ -8,6 +8,7 @@ on:
 env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: groove-alpine
+  REGION: us-east-1
 
 jobs:
   setup-build-publish-deploy:
