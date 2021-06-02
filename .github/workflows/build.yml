@@ -1,52 +1,53 @@
-name: Build and Deploy to GKE
+name: Build 
 
 on:
   push:
     branches:
-    - '**'
-    
+    - '!main'
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: noc    
+  GKE_ZONE: us-central1-a
+  IMAGE: groove-alpine
+
 jobs:
   build:
-    name: Build and Publish
+    name: Build Image
     runs-on: ubuntu-latest
+
     steps:
-    # see: https://github.com/aws-actions/configure-aws-credentials
-    
     - name: Checkout
       uses: actions/checkout@v2
-    
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-
-    # see: https://github.com/aws-actions/amazon-ecr-login
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-      
+  
     - name: Set outputs
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: groove-alpine
-        IMAGE_TAG: 1.0.0.${{ steps.vars.outputs.sha_short }}
-      run: |
-        pwd
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+    - name: Setup gcloud CLI
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        version: '290.0.1'
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
+
+    - name: Configure Docker 
+    - run: |-
+        gcloud --quiet auth configure-docker
         
-    #    docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-    #- name: Log out of Amazon ECR
-    #  if: always()
-    #  run: docker logout ${{ steps.login-ecr.outputs.registry }}
-      
-    
-      
-      
-
+    - name: Get The GKE credentials
+      run: |-
+        gcloud container clusters get-credentials "$GKE_CLUSTER" --region us-central1
+  
+    - name: Build Docker Image
+      run: |-
+        docker build --tag "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}" .
+        mkdir -p /tmp/docker-backup
+        docker save "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}" > /tmp/docker-backup/docker-image.tar
+        
+    - name: Temporatily save docker image
+      uses: actions/upload-artifact@v2
+      with:
+        name: docker-artifact
+        path: /tmp/docker-backup
+        retention-days: 3
