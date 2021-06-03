@@ -12,7 +12,7 @@ env:
   IMAGE: groove-alpine
 
 jobs:
-  build:
+  deploy:
     name: Build Image
     runs-on: ubuntu-latest
 
@@ -47,7 +47,7 @@ jobs:
     
     - name: Docker load
       run: |
-        cd /tmp/docker-backup
+        cd /opt/docker-backup
         docker load < docker-image.tar
         
     - name: Docker build
