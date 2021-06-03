@@ -14,8 +14,8 @@ env:
   IMAGE: groove-alpine
 
 jobs:
-  build:
-    name: Build Image
+  build_and_deploy:
+    name: Build and Deploy Image
     runs-on: ubuntu-latest
 
     steps:
@@ -43,13 +43,8 @@ jobs:
   
     - name: Build Docker Image
       run: |-
-        docker build --tag groove-alpine:latest .
-        mkdir -p /opt/docker-backup
-        docker save groove-alpine:latest > /opt/docker-backup/groove-alpine.tar
-        
-    - name: Temporatily save docker image
-      uses: actions/upload-artifact@v2
-      with:
-        name: docker-artifact
-        path: /opt/docker-backup
-        retention-days: 3
+        docker build --tag "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}" .
+    
+    - name: Deploys Docker Image
+      run: |
+        docker push "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}"
