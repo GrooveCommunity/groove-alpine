@@ -43,13 +43,13 @@ jobs:
   
     - name: Build Docker Image
       run: |-
-        docker build --tag "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}" .
-        mkdir -p /tmp/docker-backup
-        docker save "gcr.io/$PROJECT_ID/$IMAGE:1.0.0.${{ steps.vars.outputs.sha_short }}" > /tmp/docker-backup/docker-image.tar
+        docker build --tag groove-alpine:latest .
+        mkdir -p /opt/docker-backup
+        docker save groove-alpine:latest > /opt/docker-backup/groove-alpine.tar
         
     - name: Temporatily save docker image
       uses: actions/upload-artifact@v2
       with:
         name: docker-artifact
-        path: /tmp/docker-backup
+        path: /opt/docker-backup
         retention-days: 3
